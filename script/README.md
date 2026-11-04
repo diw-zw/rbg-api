@@ -8,8 +8,8 @@ The script:
 2. does not copy the generated `client-go` tree;
 3. rewrites scheme registration to use `k8s.io/apimachinery` instead of `controller-runtime`;
 4. formats the copied Go files;
-5. updates the root Go module dependencies and runs `go mod tidy`;
-6. updates version references in the README, root go.mod comments, and examples module.
+5. runs `go mod tidy` without changing the module’s Go or Kubernetes dependency versions;
+6. does not update `examples/` or the README installation snippets.
 
 ## Complete sync workflow
 
@@ -57,8 +57,8 @@ python3 script/sync_from_rbg.py \
 ```
 
 The script replaces the existing `workloads/` tree with the selected files,
-removes any stale `client-go/` tree, formats the copied Go code, and updates
-`go.mod`, `go.sum`, `README.md`, and `examples/go.mod`.
+removes any stale `client-go/` tree, formats the copied Go code, and runs
+`go mod tidy`.
 
 ### 4. Verify the result
 
@@ -75,7 +75,7 @@ copied into `workloads/`.
 ### 5. Commit the sync result
 
 ```bash
-git add README.md go.mod go.sum examples/go.mod workloads script
+git add go.mod go.sum workloads script
 git commit -m "feat(api): sync public API from rbg $VERSION"
 ```
 

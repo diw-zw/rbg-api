@@ -8,7 +8,7 @@ require (
 	k8s.io/client-go v0.28.15
 	// The rbg-api module path is sigs.k8s.io/rbgs/api, but it is hosted on GitHub at github.com/sgl-project/rbg-api.
 	// These two do not match, so we need the replace directive below to make it work.
-	sigs.k8s.io/rbgs/api v0.8.0
+	sigs.k8s.io/rbgs/api v0.8.0-alpha.5
 )
 
 require (
@@ -58,4 +58,4 @@ require (
 //   3. These two do not match, so direct `go get sigs.k8s.io/rbgs/api` will FAIL
 // Without this replace directive, Go would look for the module at github.com/kubernetes-sigs/rbgs
 // which does not exist.
-replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0
+replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0-alpha.5

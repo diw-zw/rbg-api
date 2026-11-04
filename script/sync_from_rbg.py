@@ -26,8 +26,6 @@ from typing import Iterable
 
 
 API_SOURCE = "api/workloads"
-API_MODULE = "sigs.k8s.io/rbgs/api"
-API_REPOSITORY = "github.com/sgl-project/rbg-api"
 
 API_FILE_NAMES = {
     "doc.go",
@@ -36,6 +34,20 @@ API_FILE_NAMES = {
     "zz_generated.deepcopy.go",
 }
 API_FILE_SUFFIXES = ("_types.go",)
+
+API_EXCLUDED_FILE_NAMES = {
+    "helper.go",
+    "register.go",
+}
+API_EXCLUDED_FILE_SUFFIXES = (
+    "_test.go",
+    "_validation.go",
+    "_conversion.go",
+    "_webhook.go",
+    "_admission.go",
+    "_default.go",
+)
+API_EXCLUDED_DIRECTORY_PREFIXES = ("pub/",)
 
 
 class SyncError(RuntimeError):
@@ -68,20 +80,26 @@ def source_files(source: Path, ref: str) -> list[str]:
     return [path for path in paths if path and not path.endswith("/")]
 
 
-def include_api_file(relative: str) -> bool:
+def classify_api_file(relative: str) -> str:
     if relative.startswith("constants/"):
         name = relative.rsplit("/", 1)[-1]
-        return name.endswith(".go") and not name.endswith("_test.go")
+        if name.endswith(".go") and not name.endswith("_test.go"):
+            return "include"
+        return "exclude"
+
+    if relative.startswith(API_EXCLUDED_DIRECTORY_PREFIXES):
+        return "exclude"
 
     match = re.fullmatch(r"v[0-9]+(?:alpha|beta)?[0-9]*/(.+)", relative)
     if match is None:
-        return False
+        return "unknown"
 
     name = match.group(1)
-    return (
-        name in API_FILE_NAMES
-        or (name.endswith(API_FILE_SUFFIXES) and not name.endswith("_test.go"))
-    )
+    if name in API_FILE_NAMES or name.endswith(API_FILE_SUFFIXES):
+        return "include"
+    if name in API_EXCLUDED_FILE_NAMES or name.endswith(API_EXCLUDED_FILE_SUFFIXES):
+        return "exclude"
+    return "unknown"
 
 
 def extract_package_constants(content: bytes) -> bytes:
@@ -91,8 +109,22 @@ def extract_package_constants(content: bytes) -> bytes:
     Those values are public API variables/constants, while the rest of helper.go
     contains controller-oriented logic that should not be published here.
     """
-    pattern = re.compile(rb"(?m)^const\s*\([^)]*?^\)", re.DOTALL)
-    return b"\n\n".join(match.group(0) for match in pattern.finditer(content))
+    lines = content.decode("utf-8").splitlines(keepends=True)
+    blocks: list[str] = []
+    current_block: list[str] | None = None
+
+    for line in lines:
+        if current_block is None and line.strip() == "const (":
+            current_block = [line]
+            continue
+
+        if current_block is not None:
+            current_block.append(line)
+            if line.strip() == ")":
+                blocks.append("".join(current_block))
+                current_block = None
+
+    return "\n\n".join(blocks).encode("utf-8")
 
 
 def remove_scheme_init_functions(content: str) -> str:
@@ -269,7 +301,10 @@ def copy_selected_files(
     for source_path in files:
         if source_path.startswith(API_SOURCE + "/"):
             relative = source_path[len(API_SOURCE) + 1 :]
-            if not include_api_file(relative):
+            classification = classify_api_file(relative)
+            if classification == "unknown":
+                raise SyncError(f"unclassified API source file: {source_path}")
+            if classification == "exclude":
                 if relative.endswith("/helper.go"):
                     blob = run_git(
                         source, ["show", f"{ref}:{source_path}"]
@@ -303,22 +338,6 @@ def copy_selected_files(
     return copied_api, 0
 
 
-def update_go_directive(root: Path, source: Path, ref: str) -> None:
-    go_mod = root / "go.mod"
-    if not go_mod.is_file():
-        return
-
-    source_go_mod = run_git(source, ["show", f"{ref}:go.mod"]).stdout.decode("utf-8")
-    match = re.search(r"^go\s+([0-9]+(?:\.[0-9]+)+)\s*$", source_go_mod, re.MULTILINE)
-    if match is None:
-        return
-
-    current = go_mod.read_text(encoding="utf-8")
-    updated, count = re.subn(r"^go\s+[^\n]+$", f"go {match.group(1)}", current, count=1)
-    if count:
-        go_mod.write_text(updated, encoding="utf-8")
-
-
 def update_readme_version(root: Path, version: str) -> None:
     readme = root / "README.md"
     if not readme.is_file():
@@ -338,97 +357,6 @@ def update_readme_version(root: Path, version: str) -> None:
     updated, count = re.subn(pattern, replacement, text, count=1)
     if count:
         readme.write_text(updated, encoding="utf-8")
-
-
-def update_version_references(root: Path, version: str) -> None:
-    """Point repository usage examples at the release being synced."""
-    examples_go_mod = root / "examples" / "go.mod"
-    previous_version: str | None = None
-    if examples_go_mod.is_file():
-        text = examples_go_mod.read_text(encoding="utf-8")
-        match = re.search(rf"^\s*{re.escape(API_MODULE)}\s+(v[^\s]+)", text, re.MULTILINE)
-        previous_version = match.group(1) if match else None
-
-        subprocess.run(
-            [
-                "go",
-                "mod",
-                "edit",
-                f"-require={API_MODULE}@{version}",
-                f"-replace={API_MODULE}={API_REPOSITORY}@{version}",
-            ],
-            cwd=examples_go_mod.parent,
-            check=True,
-        )
-
-    if previous_version is None:
-        return
-
-    root_go_mod = root / "go.mod"
-    if root_go_mod.is_file():
-        text = root_go_mod.read_text(encoding="utf-8")
-        root_go_mod.write_text(
-            text.replace(previous_version, version), encoding="utf-8"
-        )
-
-    readme = root / "README.md"
-    if readme.is_file():
-        text = readme.read_text(encoding="utf-8")
-        marker = "## Installation"
-        if marker in text:
-            before, after = text.split(marker, 1)
-            after = after.replace(previous_version, version)
-            readme.write_text(before + marker + after, encoding="utf-8")
-
-
-def update_go_mod_versions(
-    root: Path,
-    source: Path,
-    ref: str,
-    run_go_mod: bool,
-) -> None:
-    source_go_mod = run_git(source, ["show", f"{ref}:go.mod"]).stdout.decode("utf-8")
-    versions: dict[str, str] = {}
-    for module in (
-        "k8s.io/api",
-        "k8s.io/apimachinery",
-    ):
-        match = re.search(
-            rf"^\s*{re.escape(module)}\s+(v[^\s\n]+)",
-            source_go_mod,
-            re.MULTILINE,
-        )
-        if match is None:
-            raise SyncError(f"{module} not found in rbg {ref} go.mod")
-        versions[module] = match.group(1)
-
-    for module, version in versions.items():
-        subprocess.run(
-            ["go", "mod", "edit", f"-require={module}@{version}"],
-            cwd=root,
-            check=True,
-        )
-
-    subprocess.run(
-        [
-            "go",
-            "mod",
-            "edit",
-            "-droprequire=sigs.k8s.io/controller-runtime",
-        ],
-        cwd=root,
-        check=True,
-    )
-
-    if match_go := re.search(r"^go\s+([0-9]+(?:\.[0-9]+)+)\s*$", source_go_mod, re.MULTILINE):
-        subprocess.run(
-            ["go", "mod", "edit", f"-go={match_go.group(1)}"],
-            cwd=root,
-            check=True,
-        )
-
-    if run_go_mod:
-        subprocess.run(["go", "mod", "tidy"], cwd=root, check=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -480,12 +408,10 @@ def main() -> int:
         raise SyncError(f"selected no API files")
 
     if not args.skip_go_mod:
-        update_go_directive(root, source, args.ref)
-        update_go_mod_versions(root, source, args.ref, True)
+        subprocess.run(["go", "mod", "tidy"], cwd=root, check=True)
 
     if args.version:
         update_readme_version(root, args.version)
-        update_version_references(root, args.version)
 
     print(
         f"Synced rbg {args.ref}: {copied_api} API files"

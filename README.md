@@ -21,9 +21,9 @@ This repository is intended to be imported by **upper-layer business systems** t
 Add the following to your `go.mod` file:
 
 ```go
-require sigs.k8s.io/rbgs/api v0.8.0
+require sigs.k8s.io/rbgs/api v0.8.0-alpha.5
 
-replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0
+replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0-alpha.5
 ```
 
 Then run:
@@ -32,24 +32,7 @@ Then run:
 go mod tidy
 ```
 
-### Method 2: Direct GitHub import
-
-If you prefer not to use the `replace` directive, you can import directly from GitHub:
-
-```go
-import (
-    "github.com/sgl-project/rbg-api/workloads/v1alpha2"
-    "github.com/sgl-project/rbg-api/workloads/constants"
-)
-```
-
-And in your `go.mod`:
-
-```bash
-go get github.com/sgl-project/rbg-api@v0.8.0
-```
-
-**Note**: When using Method 2, make sure to update all import paths in your code to use `github.com/sgl-project/rbg-api` instead of `sigs.k8s.io/rbgs/api`.
+Direct GitHub imports are not supported because the module path and repository path do not match.
 
 ## Usage
 
