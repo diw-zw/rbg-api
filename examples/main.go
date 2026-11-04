@@ -230,6 +230,9 @@ func createRBG(ctx context.Context, rbgClient dynamic.ResourceInterface) error {
 						},
 					},
 					PodManagementPolicy: constants.ParallelPodManagement,
+					// The workload type defaults to RoleInstanceSet. To use another workload,
+					// set the constants.RoleWorkloadTypeAnnotationKey annotation on the role,
+					// e.g. "apps/v1/StatefulSet".
 					Pattern: v1alpha2.Pattern{
 						StandalonePattern: &v1alpha2.StandalonePattern{
 							TemplateSource: v1alpha2.TemplateSource{
@@ -376,6 +379,7 @@ func printRBG(rbg *v1alpha2.RoleBasedGroup) {
 		if role.Replicas != nil {
 			fmt.Printf("    Replicas: %d\n", *role.Replicas)
 		}
+		fmt.Printf("    WorkloadType: %s\n", role.GetWorkloadType())
 		if role.PodManagementPolicy != "" {
 			fmt.Printf("    PodManagementPolicy: %s\n", role.PodManagementPolicy)
 		}

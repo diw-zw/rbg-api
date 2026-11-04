@@ -8,6 +8,7 @@ This repository is intended to be imported by **upper-layer business systems** t
 
 | rbg-api Version | RBG Release | API Versions | Latest API |
 |-----------------|---------------------|--------------|------------|
+| v0.8.0-alpha.5 | [v0.8.0-alpha.5](https://github.com/sgl-project/rbg/releases/tag/v0.8.0-alpha.5) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.7.0-alpha.3 | [v0.7.0-alpha.3](https://github.com/sgl-project/rbg/releases/tag/v0.7.0-alpha.3) | v1alpha1, v1alpha2 | v1alpha2 |
 
 ## Installation
@@ -19,9 +20,9 @@ This repository is intended to be imported by **upper-layer business systems** t
 Add the following to your `go.mod` file:
 
 ```go
-require sigs.k8s.io/rbgs/api v0.7.0-alpha.3
+require sigs.k8s.io/rbgs/api v0.8.0-alpha.5
 
-replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.7.0-alpha.3
+replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0-alpha.5
 ```
 
 Then run:
@@ -44,7 +45,7 @@ import (
 And in your `go.mod`:
 
 ```bash
-go get github.com/sgl-project/rbg-api@v0.7.0-alpha.3
+go get github.com/sgl-project/rbg-api@v0.8.0-alpha.5
 ```
 
 **Note**: When using Method 2, make sure to update all import paths in your code to use `github.com/sgl-project/rbg-api` instead of `sigs.k8s.io/rbgs/api`.
