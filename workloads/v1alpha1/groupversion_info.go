@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The RBG Authors.
+Copyright 2025 The RBG Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains API Schema definitions for the workloads v1alpha1 API group.
+// Package v1 contains API Schema definitions for the workloads v1 API group.
 // +kubebuilder:object:generate=true
 // +groupName=workloads.x-k8s.io
 package v1alpha1
@@ -29,7 +29,7 @@ var (
 	// GroupVersion is group version used to register these objects.
 	GroupVersion = schema.GroupVersion{Group: "workloads.x-k8s.io", Version: "v1alpha1"}
 
-	// SchemeGroupVersion is an alias of GroupVersion for client-go compatibility.
+	// SchemeGroupVersion is an alias of GroupVersion for compatibility.
 	SchemeGroupVersion = GroupVersion
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
@@ -42,18 +42,18 @@ var (
 // addKnownTypes adds the list of known types to the given scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
-		&RoleBasedGroup{},
-		&RoleBasedGroupList{},
-		&RoleBasedGroupSet{},
-		&RoleBasedGroupSetList{},
-		&RoleBasedGroupScalingAdapter{},
-		&RoleBasedGroupScalingAdapterList{},
+		&ClusterEngineRuntimeProfile{},
+		&ClusterEngineRuntimeProfileList{},
 		&Instance{},
 		&InstanceList{},
 		&InstanceSet{},
 		&InstanceSetList{},
-		&ClusterEngineRuntimeProfile{},
-		&ClusterEngineRuntimeProfileList{},
+		&RoleBasedGroup{},
+		&RoleBasedGroupList{},
+		&RoleBasedGroupScalingAdapter{},
+		&RoleBasedGroupScalingAdapterList{},
+		&RoleBasedGroupSet{},
+		&RoleBasedGroupSetList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil

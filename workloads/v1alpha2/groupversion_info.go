@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The RBG Authors.
+Copyright 2025 The RBG Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ var (
 	// GroupVersion is group version used to register these objects.
 	GroupVersion = schema.GroupVersion{Group: "workloads.x-k8s.io", Version: "v1alpha2"}
 
-	// SchemeGroupVersion is an alias of GroupVersion for client-go compatibility.
+	// SchemeGroupVersion is an alias of GroupVersion for compatibility.
 	SchemeGroupVersion = GroupVersion
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
@@ -42,22 +42,22 @@ var (
 // addKnownTypes adds the list of known types to the given scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
+		&ClusterEngineRuntimeProfile{},
+		&ClusterEngineRuntimeProfileList{},
+		&CoordinatedPolicy{},
+		&CoordinatedPolicyList{},
 		&RoleBasedGroup{},
 		&RoleBasedGroupList{},
-		&RoleBasedGroupSet{},
-		&RoleBasedGroupSetList{},
 		&RoleBasedGroupScalingAdapter{},
 		&RoleBasedGroupScalingAdapterList{},
+		&RoleBasedGroupSet{},
+		&RoleBasedGroupSetList{},
+		&RoleBasedGroupWarmup{},
+		&RoleBasedGroupWarmupList{},
 		&RoleInstance{},
 		&RoleInstanceList{},
 		&RoleInstanceSet{},
 		&RoleInstanceSetList{},
-		&CoordinatedPolicy{},
-		&CoordinatedPolicyList{},
-		&ClusterEngineRuntimeProfile{},
-		&ClusterEngineRuntimeProfileList{},
-		&RoleBasedGroupWarmup{},
-		&RoleBasedGroupWarmupList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil

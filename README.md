@@ -1,6 +1,6 @@
 # rbg-api
 
-`rbg-api` is the standalone API and client library for [RoleBasedGroup (RBG)](https://github.com/sgl-project/rbg) — a Kubernetes operator for managing role-based LLM inference workloads (e.g., prefill/decode disaggregation).
+`rbg-api` is the standalone API types library for [RoleBasedGroup (RBG)](https://github.com/sgl-project/rbg) — a Kubernetes operator for managing role-based LLM inference workloads (e.g., prefill/decode disaggregation).
 
 This repository is intended to be imported by **upper-layer business systems** that need to interact with RBG resources via the Go client, without depending on the full operator codebase.
 
@@ -8,6 +8,7 @@ This repository is intended to be imported by **upper-layer business systems** t
 
 | rbg-api Version | RBG Release | API Versions | Latest API |
 |-----------------|---------------------|--------------|------------|
+| v0.8.0 | [v0.8.0](https://github.com/sgl-project/rbg/releases/tag/v0.8.0) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.8.0-alpha.5 | [v0.8.0-alpha.5](https://github.com/sgl-project/rbg/releases/tag/v0.8.0-alpha.5) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.7.0-alpha.3 | [v0.7.0-alpha.3](https://github.com/sgl-project/rbg/releases/tag/v0.7.0-alpha.3) | v1alpha1, v1alpha2 | v1alpha2 |
 
@@ -31,24 +32,7 @@ Then run:
 go mod tidy
 ```
 
-### Method 2: Direct GitHub import
-
-If you prefer not to use the `replace` directive, you can import directly from GitHub:
-
-```go
-import (
-    "github.com/sgl-project/rbg-api/workloads/v1alpha2"
-    "github.com/sgl-project/rbg-api/workloads/constants"
-)
-```
-
-And in your `go.mod`:
-
-```bash
-go get github.com/sgl-project/rbg-api@v0.8.0-alpha.5
-```
-
-**Note**: When using Method 2, make sure to update all import paths in your code to use `github.com/sgl-project/rbg-api` instead of `sigs.k8s.io/rbgs/api`.
+Direct GitHub imports are not supported because the module path and repository path do not match.
 
 ## Usage
 

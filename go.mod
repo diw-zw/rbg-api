@@ -13,10 +13,6 @@
 //
 //   require sigs.k8s.io/rbgs/api v0.8.0-alpha.5
 //   replace sigs.k8s.io/rbgs/api => github.com/sgl-project/rbg-api v0.8.0-alpha.5
-//
-// Alternatively, you can import directly from GitHub:
-//   import "github.com/sgl-project/rbg-api/workloads/v1alpha2"
-//   go get github.com/sgl-project/rbg-api@v0.8.0-alpha.5
 module sigs.k8s.io/rbgs/api
 
 go 1.24.1
