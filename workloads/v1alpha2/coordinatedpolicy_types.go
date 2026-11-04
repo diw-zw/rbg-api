@@ -146,7 +146,3 @@ type CoordinatedPolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CoordinatedPolicy `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&CoordinatedPolicy{}, &CoordinatedPolicyList{})
-}

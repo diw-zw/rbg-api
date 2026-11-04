@@ -6,9 +6,10 @@ The script:
 
 1. copies `api/workloads` type, constants, scheme, and generated DeepCopy files;
 2. does not copy the generated `client-go` tree;
-3. formats the copied Go files;
-4. updates the root Go module dependencies and runs `go mod tidy`;
-5. updates version references in the README, root go.mod comments, and examples module.
+3. rewrites scheme registration to use `k8s.io/apimachinery` instead of `controller-runtime`;
+4. formats the copied Go files;
+5. updates the root Go module dependencies and runs `go mod tidy`;
+6. updates version references in the README, root go.mod comments, and examples module.
 
 ## Complete sync workflow
 

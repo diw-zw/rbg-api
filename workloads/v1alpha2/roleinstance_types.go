@@ -301,7 +301,3 @@ type RoleInstanceList struct {
 type RoleInstanceTemplate struct {
 	RoleInstanceSpec `json:",inline"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RoleInstance{}, &RoleInstanceList{})
-}

@@ -32,7 +32,6 @@ API_REPOSITORY = "github.com/sgl-project/rbg-api"
 API_FILE_NAMES = {
     "doc.go",
     "groupversion_info.go",
-    "register.go",
     "constant.go",
     "zz_generated.deepcopy.go",
 }
@@ -96,6 +95,127 @@ def extract_package_constants(content: bytes) -> bytes:
     return b"\n\n".join(match.group(0) for match in pattern.finditer(content))
 
 
+def remove_scheme_init_functions(content: str) -> str:
+    """Remove package init functions that register types with SchemeBuilder."""
+    lines = content.splitlines(keepends=True)
+    output: list[str] = []
+    index = 0
+
+    while index < len(lines):
+        if lines[index].startswith("func init() {"):
+            depth = 0
+            while index < len(lines):
+                depth += lines[index].count("{") - lines[index].count("}")
+                index += 1
+                if depth == 0:
+                    break
+            continue
+
+        output.append(lines[index])
+        index += 1
+
+    return "".join(output)
+
+
+def extract_registered_types(content: str) -> list[tuple[str, str]]:
+    pattern = re.compile(
+        r"SchemeBuilder\.Register\(&(\w+)\{\}, &(\w+)\{\}\)"
+    )
+    return [(match.group(1), match.group(2)) for match in pattern.finditer(content)]
+
+
+def parse_group_version(content: str) -> tuple[str, str]:
+    match = re.search(
+        r"GroupVersion\s*=\s*schema\.GroupVersion\{"
+        r"\s*Group:\s*\"([^\"]+)\",\s*Version:\s*\"([^\"]+)\"",
+        content,
+    )
+    if match is None:
+        raise SyncError("could not parse GroupVersion from groupversion_info.go")
+    return match.group(1), match.group(2)
+
+
+def generate_groupversion_info(
+    original_content: str,
+    registered_types: list[tuple[str, str]],
+) -> str:
+    group, version = parse_group_version(original_content)
+    prefix = original_content.split("import (", 1)[0]
+    type_entries = "\n".join(
+        f"        &{object_type}{{}},\n        &{object_list}{{}}," for object_type, object_list in registered_types
+    )
+
+    return (
+        prefix
+        + """import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+var (
+	// GroupVersion is group version used to register these objects.
+	GroupVersion = schema.GroupVersion{Group: """
+        + f'"{group}", Version: "{version}"'
+        + """}
+
+	// SchemeGroupVersion is an alias of GroupVersion for compatibility.
+	SchemeGroupVersion = GroupVersion
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
+)
+
+// addKnownTypes adds the list of known types to the given scheme.
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(GroupVersion,
+"""
+        + type_entries
+        + """
+	)
+	metav1.AddToGroupVersion(scheme, GroupVersion)
+	return nil
+}
+
+// Resource takes an unqualified resource and returns a Group-qualified GroupResource.
+func Resource(resource string) schema.GroupResource {
+	return GroupVersion.WithResource(resource).GroupResource()
+}
+"""
+    )
+
+
+def rewrite_scheme_registration(root: Path) -> None:
+    """Replace controller-runtime scheme registration with apimachinery."""
+    for version_dir in sorted((root / "workloads").glob("v*")):
+        if not version_dir.is_dir():
+            continue
+
+        groupversion_path = version_dir / "groupversion_info.go"
+        if not groupversion_path.is_file():
+            raise SyncError(f"missing groupversion_info.go in {version_dir}")
+
+        registered_types: list[tuple[str, str]] = []
+        for type_path in sorted(version_dir.glob("*_types.go")):
+            content = type_path.read_text(encoding="utf-8")
+            registered_types.extend(extract_registered_types(content))
+            type_path.write_text(
+                remove_scheme_init_functions(content), encoding="utf-8"
+            )
+
+        if not registered_types:
+            raise SyncError(f"no registered API types found in {version_dir}")
+
+        groupversion_content = groupversion_path.read_text(encoding="utf-8")
+        groupversion_path.write_text(
+            generate_groupversion_info(groupversion_content, registered_types),
+            encoding="utf-8",
+        )
+
+
 def destination_path(destination_root: Path, source_path: str) -> Path:
     if source_path.startswith(API_SOURCE + "/"):
         relative = source_path[len(API_SOURCE) + 1 :]
@@ -130,6 +250,12 @@ def format_copied_go_files(root: Path) -> None:
             ["gofmt", "-w", *(str(path) for path in go_files)],
             check=True,
         )
+
+
+def validate_no_controller_runtime(root: Path) -> None:
+    for path in sorted((root / "workloads").rglob("*.go")):
+        if b"sigs.k8s.io/controller-runtime" in path.read_bytes():
+            raise SyncError(f"controller-runtime import remains in {path}")
 
 
 def copy_selected_files(
@@ -266,7 +392,6 @@ def update_go_mod_versions(
     for module in (
         "k8s.io/api",
         "k8s.io/apimachinery",
-        "sigs.k8s.io/controller-runtime",
     ):
         match = re.search(
             rf"^\s*{re.escape(module)}\s+(v[^\s\n]+)",
@@ -283,6 +408,17 @@ def update_go_mod_versions(
             cwd=root,
             check=True,
         )
+
+    subprocess.run(
+        [
+            "go",
+            "mod",
+            "edit",
+            "-droprequire=sigs.k8s.io/controller-runtime",
+        ],
+        cwd=root,
+        check=True,
+    )
 
     if match_go := re.search(r"^go\s+([0-9]+(?:\.[0-9]+)+)\s*$", source_go_mod, re.MULTILINE):
         subprocess.run(
@@ -336,7 +472,9 @@ def main() -> int:
     clear_generated_tree(root, "workloads")
     clear_generated_tree(root, "client-go")
     copied_api, _ = copy_selected_files(source, args.ref, root, files)
+    rewrite_scheme_registration(root)
     format_copied_go_files(root)
+    validate_no_controller_runtime(root)
 
     if copied_api == 0:
         raise SyncError(f"selected no API files")

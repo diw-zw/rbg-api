@@ -269,7 +269,3 @@ type RoleInstanceSetList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RoleInstanceSet `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RoleInstanceSet{}, &RoleInstanceSetList{})
-}

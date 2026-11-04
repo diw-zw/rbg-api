@@ -270,7 +270,3 @@ type InstanceSetList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InstanceSet `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&InstanceSet{}, &InstanceSetList{})
-}

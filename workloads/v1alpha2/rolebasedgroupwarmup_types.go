@@ -243,7 +243,3 @@ type RoleBasedGroupWarmupList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RoleBasedGroupWarmup `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RoleBasedGroupWarmup{}, &RoleBasedGroupWarmupList{})
-}

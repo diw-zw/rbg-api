@@ -214,7 +214,3 @@ type InstanceList struct {
 type InstanceTemplate struct {
 	InstanceSpec `json:",inline"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Instance{}, &InstanceList{})
-}
