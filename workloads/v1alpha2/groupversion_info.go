@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The RBG Authors.
+Copyright 2025 The RBG Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,50 +20,17 @@ limitations under the License.
 package v1alpha2
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
 	// GroupVersion is group version used to register these objects.
 	GroupVersion = schema.GroupVersion{Group: "workloads.x-k8s.io", Version: "v1alpha2"}
 
-	// SchemeGroupVersion is an alias of GroupVersion for client-go compatibility.
-	SchemeGroupVersion = GroupVersion
-
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-// addKnownTypes adds the list of known types to the given scheme.
-func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(GroupVersion,
-		&RoleBasedGroup{},
-		&RoleBasedGroupList{},
-		&RoleBasedGroupSet{},
-		&RoleBasedGroupSetList{},
-		&RoleBasedGroupScalingAdapter{},
-		&RoleBasedGroupScalingAdapterList{},
-		&RoleInstance{},
-		&RoleInstanceList{},
-		&RoleInstanceSet{},
-		&RoleInstanceSetList{},
-		&CoordinatedPolicy{},
-		&CoordinatedPolicyList{},
-		&ClusterEngineRuntimeProfile{},
-		&ClusterEngineRuntimeProfileList{},
-		&RoleBasedGroupWarmup{},
-		&RoleBasedGroupWarmupList{},
-	)
-	metav1.AddToGroupVersion(scheme, GroupVersion)
-	return nil
-}
-
-// Resource takes an unqualified resource and returns a Group-qualified GroupResource.
-func Resource(resource string) schema.GroupResource {
-	return GroupVersion.WithResource(resource).GroupResource()
-}

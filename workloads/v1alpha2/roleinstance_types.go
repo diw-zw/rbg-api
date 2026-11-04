@@ -23,7 +23,9 @@ import (
 
 // RoleInstanceSpec defines the desired state of RoleInstance
 type RoleInstanceSpec struct {
-	// Components is a list of components, each of which specifies a component and the number of replicas and template for RoleInstance that match the component.
+	// Components is a list of components, each of which specifies a component and the number of replicas and template for RoleInstance that match the component. Component names must be unique.
+	// +listType=map
+	// +listMapKey=name
 	Components []RoleInstanceComponent `json:"components" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// RoleInstanceReadyPolicy specifies the policy for determining if the RoleInstance is ready.
@@ -54,12 +56,6 @@ type RoleInstanceReadinessGate struct {
 	// ConditionType refers to a condition in the pod's condition list with matching type.
 	ConditionType RoleInstanceConditionType `json:"conditionType"`
 }
-
-// Default values for restart policy delay configuration.
-const (
-	DefaultBaseDelaySeconds int32 = 30
-	DefaultMaxDelaySeconds  int32 = 600
-)
 
 // GetRestartPolicyConfig returns the restart policy configuration, folding the
 // deprecated RestartPolicy string in when RestartPolicyConfig carries no type.
@@ -304,4 +300,8 @@ type RoleInstanceList struct {
 
 type RoleInstanceTemplate struct {
 	RoleInstanceSpec `json:",inline"`
+}
+
+func init() {
+	SchemeBuilder.Register(&RoleInstance{}, &RoleInstanceList{})
 }

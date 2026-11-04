@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The RBG Authors.
+Copyright 2025 The RBG Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -358,8 +358,10 @@ type RoleSpec struct {
 	// +optional
 	LeaderWorkerSet *LeaderWorkerTemplate `json:"leaderWorkerSet,omitempty"`
 
-	// Components describe the components that will be created.
+	// Components describe the components that will be created. Component names must be unique.
 	// +optional
+	// +listType=map
+	// +listMapKey=name
 	Components []InstanceComponent `json:"components,omitempty"`
 
 	// +optional
@@ -512,4 +514,8 @@ type RoleBasedGroupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RoleBasedGroup `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&RoleBasedGroup{}, &RoleBasedGroupList{})
 }

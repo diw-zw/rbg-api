@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The RBG Authors.
+Copyright 2025 The RBG Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -82,4 +82,8 @@ type RoleBasedGroupSetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RoleBasedGroupSet `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&RoleBasedGroupSet{}, &RoleBasedGroupSetList{})
 }
