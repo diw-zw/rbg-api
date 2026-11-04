@@ -75,7 +75,7 @@ copied into `workloads/`.
 ### 5. Commit the sync result
 
 ```bash
-git add go.mod go.sum workloads script
+git add go.mod go.sum workloads script README.md
 git commit -m "feat(api): sync public API from rbg $VERSION"
 ```
 

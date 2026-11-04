@@ -112,12 +112,33 @@ const (
 
 	// InPlaceOnlyUpdateStrategyType - Only use in-place update.
 	InPlaceOnlyUpdateStrategyType UpdateStrategyType = "InPlaceOnly"
+
+	// LegacyRecreateUpdateStrategyType is the v1alpha1 spelling of RecreatePod.
+	// Objects written through v1alpha1 before the value was renamed may store it;
+	// NormalizeUpdateStrategyType rewrites it to RecreatePodUpdateStrategyType.
+	LegacyRecreateUpdateStrategyType UpdateStrategyType = "Recreate"
 )
+
+// NormalizeUpdateStrategyType maps legacy and unset values onto their v1alpha2
+// equivalents: the empty value means the documented default (InPlaceIfPossible),
+// and the v1alpha1 "Recreate" spelling is upgraded to "RecreatePod". Any other
+// value passes through unchanged.
+func NormalizeUpdateStrategyType(t UpdateStrategyType) UpdateStrategyType {
+	switch t {
+	case "":
+		return InPlaceIfPossibleUpdateStrategyType
+	case LegacyRecreateUpdateStrategyType:
+		return RecreatePodUpdateStrategyType
+	default:
+		return t
+	}
+}
 
 // RollingUpdate defines the parameters to be used for RollingUpdateStrategyType.
 type RollingUpdate struct {
 	// Type indicates the type of the InstanceSetUpdateStrategy.
 	// Default is InPlaceIfPossible.
+	// +kubebuilder:validation:Enum={RecreatePod,InPlaceIfPossible,InPlaceOnly}
 	Type UpdateStrategyType `json:"type,omitempty"`
 
 	// Partition indicates the ordinal at which the role should be partitioned for updates.
@@ -553,6 +574,11 @@ const (
 
 	// RoleBasedGroupRollingUpdateInProgress means rbg is performing a rolling update.
 	RoleBasedGroupRollingUpdateInProgress RoleBasedGroupConditionType = "RollingUpdateInProgress"
+
+	// RoleBasedGroupGangConfigured means the gang scheduling configuration resolved
+	// for this rbg can be satisfied by the current roles and scheduler. The condition
+	// is absent when gang scheduling is disabled.
+	RoleBasedGroupGangConfigured RoleBasedGroupConditionType = "GangConfigured"
 )
 
 // +kubebuilder:object:root=true
