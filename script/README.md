@@ -1,16 +1,14 @@
 # rbg-api sync scripts
 
-`sync_from_rbg.py` extracts API types and generated client-go code from an rbg
-repository revision.
+`sync_from_rbg.py` extracts API types from an rbg repository revision.
 
 The script:
 
 1. copies `api/workloads` type, constants, scheme, and generated DeepCopy files;
-2. copies the complete generated `client-go` tree;
-3. rewrites client-go imports to `sigs.k8s.io/rbgs/api/client-go`;
-4. formats the copied Go files;
-5. updates the root Go module dependencies and runs `go mod tidy`.
-6. updates version references in the README, root go.mod comments, and examples module.
+2. does not copy the generated `client-go` tree;
+3. formats the copied Go files;
+4. updates the root Go module dependencies and runs `go mod tidy`;
+5. updates version references in the README, root go.mod comments, and examples module.
 
 ## Complete sync workflow
 
@@ -57,9 +55,9 @@ python3 script/sync_from_rbg.py \
   --version "$VERSION"
 ```
 
-The script replaces the existing `workloads/` and `client-go/` trees with the
-selected files, formats the copied Go code, and updates `go.mod`, `go.sum`,
-`README.md`, and `examples/go.mod`.
+The script replaces the existing `workloads/` tree with the selected files,
+removes any stale `client-go/` tree, formats the copied Go code, and updates
+`go.mod`, `go.sum`, `README.md`, and `examples/go.mod`.
 
 ### 4. Verify the result
 
@@ -76,8 +74,8 @@ copied into `workloads/`.
 ### 5. Commit the sync result
 
 ```bash
-git add README.md go.mod go.sum examples/go.mod workloads client-go script
-git commit -m "feat(api): sync public API and client-go from rbg $VERSION"
+git add README.md go.mod go.sum examples/go.mod workloads script
+git commit -m "feat(api): sync public API from rbg $VERSION"
 ```
 
 ### 6. Push the release branch

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Extract the public API and generated client-go packages from rbg.
+"""Extract the public API packages from rbg.
 
 The script intentionally copies declarative API files (types, constants, scheme
 information, and generated DeepCopy methods) while excluding validation,
 conversion, webhook, helper, and test logic. The generated client-go tree is
-copied in full because it is useful as a standalone client library.
+not copied.
 
 Example:
 
@@ -26,12 +26,8 @@ from typing import Iterable
 
 
 API_SOURCE = "api/workloads"
-CLIENT_SOURCE = "client-go"
-TARGET_MODULE = "sigs.k8s.io/rbgs/api"
 API_MODULE = "sigs.k8s.io/rbgs/api"
 API_REPOSITORY = "github.com/sgl-project/rbg-api"
-SOURCE_CLIENT_IMPORT = b"sigs.k8s.io/rbgs/client-go/"
-TARGET_CLIENT_IMPORT = b"sigs.k8s.io/rbgs/api/client-go/"
 
 API_FILE_NAMES = {
     "doc.go",
@@ -67,7 +63,7 @@ def ensure_repository(source: Path, ref: str) -> None:
 def source_files(source: Path, ref: str) -> list[str]:
     result = run_git(
         source,
-        ["ls-tree", "-r", "--name-only", ref, "--", API_SOURCE, CLIENT_SOURCE],
+        ["ls-tree", "-r", "--name-only", ref, "--", API_SOURCE],
     )
     paths = result.stdout.decode("utf-8").splitlines()
     return [path for path in paths if path and not path.endswith("/")]
@@ -89,10 +85,6 @@ def include_api_file(relative: str) -> bool:
     )
 
 
-def rewrite_imports(content: bytes) -> bytes:
-    return content.replace(SOURCE_CLIENT_IMPORT, TARGET_CLIENT_IMPORT)
-
-
 def extract_package_constants(content: bytes) -> bytes:
     """Extract top-level const blocks without helper functions.
 
@@ -108,9 +100,6 @@ def destination_path(destination_root: Path, source_path: str) -> Path:
     if source_path.startswith(API_SOURCE + "/"):
         relative = source_path[len(API_SOURCE) + 1 :]
         target = destination_root / "workloads" / relative
-    elif source_path.startswith(CLIENT_SOURCE + "/"):
-        relative = source_path[len(CLIENT_SOURCE) + 1 :]
-        target = destination_root / "client-go" / relative
     else:
         raise SyncError(f"unexpected source path: {source_path}")
 
@@ -135,7 +124,6 @@ def clear_generated_tree(root: Path, directory: str) -> None:
 def format_copied_go_files(root: Path) -> None:
     go_files = [
         *sorted((root / "workloads").rglob("*.go")),
-        *sorted((root / "client-go").rglob("*.go")),
     ]
     if go_files:
         subprocess.run(
@@ -151,7 +139,6 @@ def copy_selected_files(
     files: list[str],
 ) -> tuple[int, int]:
     copied_api = 0
-    copied_client = 0
 
     for source_path in files:
         if source_path.startswith(API_SOURCE + "/"):
@@ -179,19 +166,15 @@ def copy_selected_files(
                         copied_api += 1
                 continue
             copied_api += 1
-        elif source_path.startswith(CLIENT_SOURCE + "/"):
-            if not source_path.endswith(".go"):
-                continue
-            copied_client += 1
         else:
             continue
 
         blob = run_git(source, ["show", f"{ref}:{source_path}"]).stdout
         target = destination_path(destination_root, source_path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(rewrite_imports(blob))
+        target.write_bytes(blob)
 
-    return copied_api, copied_client
+    return copied_api, 0
 
 
 def update_go_directive(root: Path, source: Path, ref: str) -> None:
@@ -283,7 +266,6 @@ def update_go_mod_versions(
     for module in (
         "k8s.io/api",
         "k8s.io/apimachinery",
-        "k8s.io/client-go",
         "sigs.k8s.io/controller-runtime",
     ):
         match = re.search(
@@ -350,18 +332,14 @@ def main() -> int:
     files = source_files(source, args.ref)
     if not any(path.startswith(API_SOURCE + "/") for path in files):
         raise SyncError(f"no {API_SOURCE} files found in rbg {args.ref}")
-    if not any(path.startswith(CLIENT_SOURCE + "/") for path in files):
-        raise SyncError(f"no {CLIENT_SOURCE} files found in rbg {args.ref}")
 
     clear_generated_tree(root, "workloads")
     clear_generated_tree(root, "client-go")
-    copied_api, copied_client = copy_selected_files(source, args.ref, root, files)
+    copied_api, _ = copy_selected_files(source, args.ref, root, files)
     format_copied_go_files(root)
 
-    if copied_api == 0 or copied_client == 0:
-        raise SyncError(
-            f"selected no files (api={copied_api}, client-go={copied_client})"
-        )
+    if copied_api == 0:
+        raise SyncError(f"selected no API files")
 
     if not args.skip_go_mod:
         update_go_directive(root, source, args.ref)
@@ -372,8 +350,7 @@ def main() -> int:
         update_version_references(root, args.version)
 
     print(
-        f"Synced rbg {args.ref}: {copied_api} API files, "
-        f"{copied_client} client-go files"
+        f"Synced rbg {args.ref}: {copied_api} API files"
     )
     return 0
 
