@@ -8,6 +8,7 @@ This repository is intended to be imported by **upper-layer business systems** t
 
 | rbg-api Version | RBG Release | API Versions | Latest API |
 |-----------------|---------------------|--------------|------------|
+| v0.9.0-alpha.2 | [v0.9.0-alpha.2](https://github.com/sgl-project/rbg/releases/tag/v0.9.0-alpha.2) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.9.0-alpha.1 | [v0.9.0-alpha.1](https://github.com/sgl-project/rbg/releases/tag/v0.9.0-alpha.1) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.8.0 | [v0.8.0](https://github.com/sgl-project/rbg/releases/tag/v0.8.0) | v1alpha1, v1alpha2 | v1alpha2 |
 | v0.8.0-alpha.5 | [v0.8.0-alpha.5](https://github.com/sgl-project/rbg/releases/tag/v0.8.0-alpha.5) | v1alpha1, v1alpha2 | v1alpha2 |
