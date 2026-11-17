@@ -21,7 +21,7 @@ Use the same tag or branch name for both the rbg source revision and the
 `rbg-api` release version.
 
 ```bash
-export VERSION=v0.9.0-alpha.3
+export VERSION=v0.9.0-alpha.4
 export RBG_SOURCE=../rbg
 ```
 
