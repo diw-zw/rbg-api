@@ -38,6 +38,7 @@ API_FILE_SUFFIXES = ("_types.go",)
 API_EXCLUDED_FILE_NAMES = {
     "helper.go",
     "register.go",
+    "excluded_ordinals.go",
 }
 API_EXCLUDED_FILE_SUFFIXES = (
     "_test.go",
@@ -47,7 +48,7 @@ API_EXCLUDED_FILE_SUFFIXES = (
     "_admission.go",
     "_default.go",
 )
-API_EXCLUDED_DIRECTORY_PREFIXES = ("pub/",)
+API_EXCLUDED_DIRECTORY_PREFIXES = ("pub/", "ordinals/") 
 
 
 class SyncError(RuntimeError):
